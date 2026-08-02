@@ -227,6 +227,7 @@ This results in:
 ├── output.csv                  # Final generated submission output
 ├── .env                        # Environment variable configuration
 └── README.md                   # System documentation
+```
 
 ---
 
@@ -244,3 +245,4 @@ echo "GEMINI_API_KEY=your_gemini_api_key_here" > .env
 
 # 4. Run full pipeline → generates final output.csv
 python code/main.py
+```
