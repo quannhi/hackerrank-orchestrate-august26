@@ -1,130 +1,246 @@
-# HackerRank Orchestrate
+# Inbox Intelligence Agent
 
-Starter repository for the **HackerRank Orchestrate** 24-hour hackathon.
-
-## Message Notification Router
-
-Build an AI-powered system for WhatsApp that decides which messages deserve immediate attention, which should wait, and which should be muted.
-
-The system must reason over multimodal messages, including text messages, image posters/screenshots, and voice notes.
-
-WhatsApp is noisy. A user can receive family chats, society notices, school updates, co-worker messages, business account promotions, image posters, voice notes, and scams in the same message stream. Treating every message the same creates two bad outcomes: important messages get missed, and unwanted or risky messages interrupt the user.
-
-Read [`problem_statement.md`](./problem_statement.md) for the full task spec, input/output schema, allowed values, and submission format.
+A hybrid AI message routing system that automatically filters, prioritizes, and explains incoming messages using deterministic rules, retrieval-augmented reasoning, and a Large Language Model.
 
 ---
 
-## Repository Layout
+## Overview
 
-```text
-.
-├── AGENTS.md                         # Rules for AI coding tools + transcript logging
-├── problem_statement.md              # Full challenge statement
-├── README.md                         # You are here
-└── dataset/
-    ├── messages.csv                  # Messages to route
-    ├── output.csv                    # Blank submission template
-    ├── sample_messages.csv           # Solved examples
-    ├── users.csv                     # User notification behavior
-    ├── groups.csv                    # Group metadata
-    ├── group_members.csv             # User-group relationships
-    ├── business_accounts.csv         # Business sender metadata
-    ├── user_business_history.csv     # User-business history
-    ├── message_history.csv           # Historical messages
-    ├── message_events.csv            # User reactions to historical messages
-    ├── images.csv                    # Image IDs and media file paths
-    ├── voice_notes.csv               # Voice note IDs and media file paths
-    ├── daily_notification_summary.csv
-    └── media/
-        ├── images/
-        └── audio/
+Modern messaging platforms overwhelm users with hundreds of notifications every day. Most messages are either spam, promotions, routine business updates, or low-priority conversations.
+
+This project automatically classifies every incoming message into one of three actions:
+
+*  **Notify** – Important messages requiring immediate attention
+*  **Digest** – Useful but non-urgent information bundled for later review
+*  **Mute** – Spam, scams, phishing attempts, and unwanted broadcasts
+
+Unlike purely rule-based systems or purely LLM-based systems, this project combines both approaches to maximize accuracy while minimizing cost.
+
+---
+
+## Features
+
+* Hybrid Rule-Based + LLM Architecture
+* Retrieval-Augmented Generation (RAG)
+* High-confidence Regex Filtering
+* Scam Detection
+* Spam & Chain Message Detection
+* Promotion Detection
+* Personalized Decision Making using historical interactions
+* Explainable AI reasoning
+* Confidence scoring
+* Evidence retrieval from similar historical messages
+* Multimodal support (text, images, voice transcripts)
+
+---
+
+## Pipeline
+
+Incoming Message
+
+↓
+
+High-Confidence Rule Engine
+
+* Scam Detection
+* Spam Detection
+* Promotion Detection
+* Greeting Detection
+* Forwarded Message Detection
+
+↓
+
+If confidently classified:
+
+Return immediately
+
+↓
+
+Otherwise
+
+Retrieve Similar Historical Messages (RAG)
+
+↓
+
+Gemini Flash
+
+↓
+
+Decision Generation
+
+↓
+
+CSV Output
+
+---
+
+## Output Format
+
+Each message produces
+
+```
+message_id
+action
+message_type
+reason
+confidence
+evidence_message_ids
+```
+
+Example
+
+```
+msg_045
+notify
+event
+Courier is waiting outside with a delivery requiring action within ten minutes.
+0.96
+message_0146;message_0145
 ```
 
 ---
 
-## What You Need to Build
 
-For every row in `dataset/messages.csv`, produce one row in `output.csv` with:
+## Hybrid Design
 
-| Column | Meaning |
-|---|---|
-| `message_id` | Incoming message ID |
-| `action` | One of `notify`, `digest`, or `mute` |
-| `message_type` | Best-fit message category |
-| `reason` | Short human-readable explanation |
-| `confidence` | Number from `0` to `1` |
-| `evidence_message_ids` | Historical message IDs used as evidence; write `none` if there is no useful evidence |
+Instead of sending every message to the LLM, deterministic filters first remove obvious cases.
 
-Your system should make personalized decisions using the provided message, user, group, business, media, and historical interaction data.
-For image and voice-note messages, `images.csv` and `voice_notes.csv` only provide file paths; your system should inspect the media files themselves.
+Example:
 
----
+Regex immediately catches
 
-## Suggested Workflow
+* OTP phishing
+* Chain letters
+* Promotional spam
 
-1. Inspect `dataset/sample_messages.csv` to understand the expected output format.
-2. Load `dataset/messages.csv` and all relevant context files.
-3. Build your routing system using any approach: LLMs, retrieval, rules, classifiers, agents, or hybrids.
-4. Write predictions to `output.csv`.
-5. Evaluate your approach on the solved sample rows before submitting.
+Only ambiguous messages are sent to Gemini.
 
-You may use any language or runtime. Python, JavaScript, and TypeScript are all reasonable choices.
+Advantages:
+
+* Lower latency
+* Lower token cost
+* Deterministic behavior
+* Fewer hallucinations
 
 ---
 
-## Requirements
+## Retrieval-Augmented Generation
 
-Your solution must:
+Before reasoning, the system retrieves historically similar conversations.
 
-- be runnable from the terminal
-- read the provided files from `dataset/`
-- produce a valid `output.csv`
-- include one prediction for every `message_id` in `dataset/messages.csv`
-- not use organizer-only files or hardcoded labels
+The LLM therefore reasons using:
 
-If you use API keys or secrets, read them from environment variables. Never hardcode secrets in the repo.
+* Similar past messages
+* Previous user behavior
+* Historical replies
+* Historical mutes
 
----
-
-## Evaluation
-
-Your `output.csv` will be compared against hidden ground-truth labels.
-
-The scoring will consider:
-
-- correctness of `action`
-- correctness of `message_type`
-- usefulness and consistency of `reason`
-- whether `evidence_message_ids` point to relevant historical messages
-- reasonable confidence calibration
-
-Strong systems will combine retrieval, structured metadata, behavioral history, safety checks, OCR/ASR handling, and contextual reasoning.
+instead of relying only on the current message.
 
 ---
 
-## Chat Transcript Logging
+## Confidence Scores
 
-This repo includes an [`AGENTS.md`](./AGENTS.md) file for AI coding tools. It asks compatible tools to append conversation summaries to:
+Confidence is represented numerically.
 
-| Platform | Path |
-|---|---|
-| macOS / Linux | `$HOME/hackerrank_orchestrate_august26/log.txt` |
-| Windows | `%USERPROFILE%\hackerrank_orchestrate_august26\log.txt` |
-
-Upload this log as your chat transcript at submission time. Do not paste secrets into the chat.
+| Score     | Meaning                                                      |
+| --------- | ------------------------------------------------------------ |
+| 0.95–1.00 | Very high confidence (deterministic or nearly deterministic) |
+| 0.85–0.94 | Strong semantic confidence                                   |
+| 0.70–0.84 | Moderate confidence                                          |
+| <0.70     | Borderline decision                                          |
 
 ---
 
-## Submission
+## Explainability
 
-Submit the following files as instructed by HackerRank:
+Every decision contains a natural-language explanation.
 
-1. **Code zip**: full runnable solution, prompts/configs, README, and any evaluation files.
-2. **Predictions CSV**: final `output.csv` for all rows in `dataset/messages.csv`.
-3. **Chat transcript**: the `log.txt` described above.
+Example
 
-Before submitting, confirm:
+```
+Immediate notification because the message requires user action before a deadline and similar messages historically received prompt replies.
+```
 
-- `output.csv` has one row per row in `dataset/messages.csv`.
-- `output.csv` has the exact required columns in the exact required order.
-- Your runnable code and setup instructions are included in `code.zip`.
+This allows users to understand *why* the system made a decision.
+
+---
+
+## Edge Cases Considered
+
+* Quoted phishing messages
+* Promotions disguised as personal conversations
+* Genuine security warnings mentioning OTPs
+* Voice message transcripts
+* Image-based reminders
+* Personal messages with deadlines
+* Verified businesses sending urgent updates
+* Historical user behavior conflicting with message urgency
+
+---
+
+## Technologies
+
+* Python
+* Gemini Flash
+* Regex
+* Retrieval-Augmented Generation (RAG)
+* CSV Processing
+
+---
+
+## Future Improvements
+
+* OCR for image understanding
+* Calendar integration
+* User-adjustable routing preferences
+* Better confidence calibration
+* Active learning from user feedback
+
+---
+
+## Design Decisions
+
+Rather than replacing deterministic logic with AI, this project uses AI only where human-like semantic reasoning is actually needed.
+
+This results in:
+
+* Faster execution
+* Lower cost
+* Higher precision
+* Explainable decisions
+* Robust handling of ambiguous real-world messages
+
+---
+
+## Repository Structure
+
+```text
+.
+├── dataset/                    # Original dataset files
+├── code/
+│   ├── rule_engine.py          # Tier 1 Regex logic
+│   ├── context_builder.py      # Relational joiner & metric aggregator
+│   ├── router_llm.py           # Tier 2 Gemini Flash-Lite LLM engine
+│   ├── requirements.txt        # Dependencies
+│   └── main.py                 # Full batch execution pipeline
+├── output.csv                  # Final generated submission output
+├── .env                        # Environment variable configuration
+└── README.md                   # System documentation
+
+---
+
+## Quickstart
+
+```bash
+# 1. Setup virtual environment & activate
+python3.11 -m venv .venv && source .venv/bin/activate
+
+# 2. Install dependencies
+pip install -r requirements.txt
+
+# 3. Configure API key
+echo "GEMINI_API_KEY=your_gemini_api_key_here" > .env
+
+# 4. Run full pipeline → generates final output.csv
+python code/main.py
