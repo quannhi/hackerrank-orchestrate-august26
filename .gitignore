@@ -10,4 +10,5 @@ Thumbs.db
 .env.local
 .env.*.local
 *.log
+log.txt
 !.env.example
