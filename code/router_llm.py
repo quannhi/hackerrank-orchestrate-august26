@@ -31,18 +31,14 @@ class MsgTypeEnum(str, Enum):
 
 class RouterDecision(BaseModel):
     action: ActionEnum = Field(
-        description="The routing action: notify, digest, or mute."
-    )
+        description="The routing action: notify, digest, or mute.")
     message_type: MsgTypeEnum = Field(
-        description="The specific category of the message."
-    )
+        description="The specific category of the message.")
     reason: str = Field(
-        description="A 1-2 sentence explanation of why this decision was made, referencing context flags."
+        description="A 1-2 sentence explanation of why this decision was made, referencing context flags.")
+    confidence: float = Field(
+        description="Confidence score as a float from 0.0 (uncertain) to 1.0 (certain)."
     )
-    confidence: str = Field(
-        description="High, medium, or low confidence in this classification."
-    )
-
 
 # ---------------------------------------------------------------------------
 # 2. Main LLM Router Class
@@ -150,6 +146,6 @@ class LLMRouter:
                 "action": "digest",
                 "message_type": "unknown",
                 "reason": f"Fallback applied due to API error: {str(e)}",
-                "confidence": "low",
+                "confidence": 0.50,
                 "evidence_message_ids": evidence_str,
             }

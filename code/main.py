@@ -43,7 +43,12 @@ def main():
         if action is not None:
             tier1_count += 1
             ctx = context_builder.get_message_context(msg_id)
-            evidence_str = " ".join(ctx.get("evidence_ids", []))
+            raw_evidence = ctx.get("evidence_ids", [])
+            evidence_str = (
+                ";".join(raw_evidence)
+                if raw_evidence
+                else "none" 
+            )
 
             decision = {
                 "message_id": msg_id,
