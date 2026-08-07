@@ -1,3 +1,10 @@
+# Results
+
+Out of 22,000+ total registrations and nearly 2000 submissions, this one ranked 649th
+
+This was my first ever attempt at a hackathon, and it proved to be a valuable learning experience
+
+There is still much to be learned, I am looking forward to future orchestrates and hackathons!
 # Inbox Intelligence Agent
 
 A hybrid AI message routing system that automatically filters, prioritizes, and explains incoming messages using deterministic rules, retrieval-augmented reasoning, and a Large Language Model.

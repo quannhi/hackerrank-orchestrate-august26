@@ -1,10 +1,11 @@
 import os
+import time
 import pandas as pd
 from dotenv import load_dotenv
 
 # Import custom modules
 from context_builder import ContextBuilder
-from rule_engine import classify_tier1_regex  # <-- FIXED IMPORT
+from rule_engine import classify_tier1_regex
 from router_llm import LLMRouter
 
 
@@ -47,7 +48,7 @@ def main():
             evidence_str = (
                 ";".join(raw_evidence)
                 if raw_evidence
-                else "none" 
+                else "none"
             )
 
             decision = {
@@ -55,7 +56,7 @@ def main():
                 "action": action,
                 "message_type": msg_type,
                 "reason": reason,
-                "confidence": "high",
+                "confidence": 1.0,
                 "evidence_message_ids": evidence_str,
             }
             print(
@@ -77,14 +78,18 @@ def main():
                 "reason": decision_raw.get(
                     "reason", "Analyzed by LLM context router."
                 ),
-                "confidence": decision_raw.get("confidence", "medium"),
+                "confidence": decision_raw.get("confidence", 0.8),
                 "evidence_message_ids": decision_raw.get(
-                    "evidence_message_ids", ""
+                    "evidence_message_ids", "none"
                 ),
             }
             print(
                 f"[{idx+1}/{total_messages}] {msg_id} -> TIER 2 ROUTED ({decision['action']} / {decision['message_type']})"
             )
+
+            # Pause 5 seconds after Tier 2 LLM calls to respect API rate limits
+            if idx < total_messages - 1:
+                time.sleep(5)
 
         results.append(decision)
 
