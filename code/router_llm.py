@@ -1,14 +1,12 @@
-import os
+import asyncio
 import json
-from pydantic import BaseModel, Field
+import os
 from enum import Enum
 from google import genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 
-# ---------------------------------------------------------------------------
-# 1. Define Strict Output Schema using Pydantic
-# ---------------------------------------------------------------------------
 class ActionEnum(str, Enum):
     notify = "notify"
     digest = "digest"
@@ -31,95 +29,107 @@ class MsgTypeEnum(str, Enum):
 
 class RouterDecision(BaseModel):
     action: ActionEnum = Field(
-        description="The routing action: notify, digest, or mute.")
+        description="The routing action: notify, digest, or mute."
+    )
     message_type: MsgTypeEnum = Field(
-        description="The specific category of the message.")
+        description="The specific category of the message."
+    )
     reason: str = Field(
-        description="A 1-2 sentence explanation of why this decision was made, referencing context flags.")
+        description="A 1-2 sentence explanation referencing evidence IDs explicitly if context exists."
+    )
     confidence: float = Field(
-        description="Confidence score as a float from 0.0 (uncertain) to 1.0 (certain)."
+        ge=0.0,
+        le=1.0,
+        description="Confidence score bounded strictly between 0.0 and 1.0.",
     )
 
-# ---------------------------------------------------------------------------
-# 2. Main LLM Router Class
-# ---------------------------------------------------------------------------
-class LLMRouter:
 
-    def __init__(self):
-        # Automatically picks up GEMINI_API_KEY from the environment
+class AsyncLLMRouter:
+
+    def __init__(
+        self,
+        max_retries: int = 3,
+        retry_delay: float = 2.0,
+        request_timeout: float = 30.0,  # Updated to 30s
+    ):
         self.client = genai.Client()
         self.model_name = "gemini-3.5-flash-lite"
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
+        self.request_timeout = request_timeout
 
     def construct_prompt(self, context: dict) -> str:
-        """Translates the rich context dictionary into a clear prompt for Gemini."""
-
         flags = context.get("security_flags", {})
         metrics = context.get("metrics", {})
         past_msgs = context.get("user_sender_history", [])
+        evidence_formatted = context.get("evidence_formatted", "none")
 
-        # Format past interactions for Gemini to cite if necessary
         history_summary = []
         for pm in past_msgs:
             history_summary.append(
-                f"- [ID: {pm.get('message_id')}] Text: '{pm.get('message_text')}' | Replied: {pm.get('message_replied')}, Dismissed: {pm.get('notification_dismissed')}"
+                f"- [Evidence ID: {pm.get('message_id')}] Text: '{pm.get('message_text')}' | "
+                f"Replied: {pm.get('message_replied')}, Dismissed: {pm.get('notification_dismissed')}"
             )
         history_str = (
             "\n".join(history_summary)
             if history_summary
-            else "No prior message history found."
+            else "No prior message history."
         )
 
-        prompt = f"""
+        return f"""
         You are an intelligent notification router. Analyze the following incoming message and its context to decide its routing action and category.
-        
+
+        [CRITICAL EVALUATION POLICY - STRICT NOTIFY vs. DIGEST SEPARATION]
+        1. DEFAULT TO DIGEST: Assume messages belong in 'digest' unless strict criteria for 'notify' or 'mute' are met.
+        2. NOTIFY CRITERIA (Strictly Limited):
+        - ONLY use 'notify' for time-critical emergencies, direct personal 1:1 user messages requiring an immediate reply, or active security alerts.
+        - DO NOT use 'notify' for marketing, order status, time-limited sales, business updates, or routine calendar reminders—even if they contain words like "urgent", "limited time", or "action required".
+        3. UNKNOWN / FIRST-CONTACT RULE:
+        - If user history is empty ('none') and sender is a business or unknown party, route to 'digest' by default. Never escalate first-contact standard messages to 'notify'.
         [ROUTING RULES]
-        - ACTION 'mute': Use for spam, scams, heavy forwards, or if domain_mismatch is True.
+        - ACTION 'mute': Use for scam, spam, heavy forwards, or domain_mismatch.
         - ACTION 'notify': Use for urgent matters, personal direct messages, critical events, or requested payment updates.
-        - ACTION 'digest': Use for promotions, standard business updates, greetings, or low-priority interactions.
-        
+        - ACTION 'digest': Use for promotions, standard business updates, or low-priority interactions.
+
+        [EVIDENCE REQUIREMENTS]
+        Available Evidence IDs for this context: {evidence_formatted}
+        If evidence IDs exist (not 'none'), your reason MUST explicitly mention the evidence ID(s) and signal.
+
         [MESSAGE DETAILS]
         - Message ID: {context.get('message_id')}
         - Text: "{context.get('message_text', '')}"
         - Conversation Type: {context.get('conversation_type')}
         - Forwarded Count: {context.get('forwarded_count')}
-        
+
         [SECURITY & HISTORY CONTEXT]
-        - Domain Mismatch (Scam Risk): {flags.get('domain_mismatch')}
+        - Domain Mismatch: {flags.get('domain_mismatch')}
         - Business Verified: {flags.get('is_business_verified')}
         - Prior User Reports: {flags.get('has_prior_user_reports')}
         - Prior User Mutes: {flags.get('has_prior_user_mutes')}
-        - User Historical Reply Rate: {metrics.get('reply_rate', 0.0):.2f} (1.0 = always replies, 0.0 = never replies)
-        
-        [PAST HISTORY MESSAGES WITH SENDER/GROUP]
+        - User Reply Rate: {metrics.get('reply_rate', 0.0):.2f}
+
+        [HISTORICAL MESSAGES]
         {history_str}
-        
-        Analyze the text, the provided context, and any attached media to classify this message accurately.
         """
-        return prompt
 
-    def analyze_message(self, context: dict) -> dict:
-        """Sends context and media to Gemini and returns structured decision with evidence IDs."""
-
-        # Prepare default evidence_message_ids string from context builder
-        raw_evidence = context.get("evidence_ids", [])
-        evidence_str = " ".join(raw_evidence) if isinstance(
-            raw_evidence, list) else str(raw_evidence)
+    async def _execute_single_call(self, context: dict) -> dict:
+        evidence_str = context.get("evidence_formatted", "none")
+        media_path = context.get("media_path")
+        uploaded_file = None
 
         try:
-            contents = [self.construct_prompt(context)]
-
-            # Handle Media attachment
-            media_path = context.get("media_path")
-            uploaded_file = None
             if media_path and os.path.exists(media_path):
-                print(f"Uploading media for analysis: {media_path}")
-                uploaded_file = self.client.files.upload(file=media_path)
-                contents.append(uploaded_file)
+                uploaded_file = await asyncio.to_thread(
+                    self.client.files.upload, file=media_path
+                )
 
-            # Call Gemini with Structured Outputs
-            response = self.client.models.generate_content(
+            prompt_text = self.construct_prompt(context)
+            contents = (
+                [uploaded_file, prompt_text] if uploaded_file else [prompt_text]
+            )
+
+            chat = self.client.chats.create(
                 model=self.model_name,
-                contents=contents,
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
                     response_schema=RouterDecision,
@@ -127,21 +137,55 @@ class LLMRouter:
                 ),
             )
 
-            decision = json.loads(response.text)
+            for attempt in range(1, self.max_retries + 1):
+                try:
+                    response = await asyncio.to_thread(
+                        chat.send_message, contents
+                    )
+                    decision = json.loads(response.text)
 
-            # Cleanup uploaded media file
+                    conf = float(decision.get("confidence", 0.8))
+                    decision["confidence"] = max(0.0, min(1.0, conf))
+                    decision["evidence_message_ids"] = evidence_str
+                    return decision
+
+                except Exception as api_err:
+                    if attempt == self.max_retries:
+                        raise api_err
+                    wait_time = self.retry_delay * (2 ** (attempt - 1))
+                    await asyncio.sleep(wait_time)
+
+        finally:
             if uploaded_file:
-                self.client.files.delete(name=uploaded_file.name)
+                try:
+                    await asyncio.to_thread(
+                        self.client.files.delete, name=uploaded_file.name
+                    )
+                except Exception:
+                    pass
 
-            # Attach evidence_message_ids to final output dictionary
-            decision["evidence_message_ids"] = evidence_str
-            return decision
+    async def analyze_message_async(self, context: dict) -> dict:
+        evidence_str = context.get("evidence_formatted", "none")
+        msg_id = context.get("message_id")
 
-        except Exception as e:
-            print(
-                f"LLM Routing failed for message {context.get('message_id')}: {e}"
+        try:
+            return await asyncio.wait_for(
+                self._execute_single_call(context),
+                timeout=self.request_timeout,
             )
-            # Safe Fallback
+        except asyncio.TimeoutError:
+            print(
+                f"\n⚠️ TIMEOUT: Message {msg_id} exceeded {self.request_timeout}s limit. Applying fallback..."
+            )
+            return {
+                "action": "digest",
+                "message_type": "unknown",
+                "reason": f"Fallback applied: Request timed out after {self.request_timeout} seconds.",
+                "confidence": 0.50,
+                "evidence_message_ids": evidence_str,
+            }
+        except Exception as e:
+            print(f"\n❌ ERROR: Message {msg_id} failed: {e}")
             return {
                 "action": "digest",
                 "message_type": "unknown",

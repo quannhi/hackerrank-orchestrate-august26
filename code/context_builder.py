@@ -4,7 +4,7 @@ import pandas as pd
 
 class ContextBuilder:
 
-    def __init__(self, dataset_dir: str = None):
+    def __init__(self, dataset_dir: str = None, max_history_items: int = 3):
         if dataset_dir is None:
             base_dir = os.path.dirname(
                 os.path.dirname(os.path.abspath(__file__))
@@ -12,6 +12,7 @@ class ContextBuilder:
             dataset_dir = os.path.join(base_dir, "dataset")
 
         self.dataset_dir = dataset_dir
+        self.max_history_items = max_history_items
 
         self.messages_df = pd.read_csv(
             os.path.join(dataset_dir, "messages.csv")
@@ -28,14 +29,36 @@ class ContextBuilder:
         self.images_df = self._load_csv_if_exists("images.csv")
         self.voice_notes_df = self._load_csv_if_exists("voice_notes.csv")
 
-    def _load_csv_if_exists(self, filename: str):
+    def _load_csv_if_exists(self, filename: str) -> pd.DataFrame:
         path = os.path.join(self.dataset_dir, filename)
         if os.path.exists(path):
             return pd.read_csv(path)
         return pd.DataFrame()
 
+    @staticmethod
+    def format_evidence_ids(raw_evidence_list: list) -> str:
+        """
+        Enforces strict semicolon-separated citation formatting.
+        Returns 'none' if empty, null, or invalid[cite: 1].
+        """
+        if not raw_evidence_list or not isinstance(raw_evidence_list, list):
+            return "none"
+
+        clean_ids = []
+        for item in raw_evidence_list:
+            if pd.notna(item):
+                item_str = str(item).strip()
+                if (
+                    item_str
+                    and item_str.lower() != "none"
+                    and item_str not in clean_ids
+                ):
+                    clean_ids.append(item_str)
+
+        return ";".join(clean_ids) if clean_ids else "none"
+
     def get_message_context(self, message_id: str) -> dict:
-        """Builds a comprehensive, security-checked context dictionary for a specific incoming message_id."""
+        """Builds context dictionary with deterministic evidence selection."""
         msg_rows = self.messages_df[
             self.messages_df["message_id"] == message_id
         ]
@@ -59,8 +82,9 @@ class ContextBuilder:
             "conversation_type": conv_type,
             "created_at": msg.get("created_at"),
             "message_text": (
-                msg.get("message_text") if pd.notna(
-                    msg.get("message_text")) else ""
+                msg.get("message_text")
+                if pd.notna(msg.get("message_text"))
+                else ""
             ),
             "forwarded_count": msg.get("forwarded_count", 0),
             "media_type": media_type,
@@ -79,6 +103,7 @@ class ContextBuilder:
             "sender_info": {},
             "user_sender_history": [],
             "evidence_ids": [],
+            "evidence_formatted": "none",
         }
 
         # 1. Resolve Media Path
@@ -104,7 +129,7 @@ class ContextBuilder:
                         self.dataset_dir, rel_path
                     )
 
-        # 2. Business Sender Context & Security Check
+        # 2. Business Sender Context
         if conv_type == "business" and pd.notna(biz_id):
             if not self.business_df.empty:
                 biz_match = self.business_df[
@@ -113,8 +138,6 @@ class ContextBuilder:
                 if not biz_match.empty:
                     b_data = biz_match.iloc[0].to_dict()
                     context["sender_info"] = b_data
-
-                    # Security Checks
                     context["security_flags"]["is_business_verified"] = bool(
                         b_data.get("verified", 0) == 1
                     )
@@ -142,7 +165,9 @@ class ContextBuilder:
         # 3. Group Sender Context
         elif conv_type == "group" and pd.notna(group_id):
             if not self.groups_df.empty:
-                g_match = self.groups_df[self.groups_df["group_id"] == group_id]
+                g_match = self.groups_df[
+                    self.groups_df["group_id"] == group_id
+                ]
                 if not g_match.empty:
                     context["sender_info"] = g_match.iloc[0].to_dict()
 
@@ -156,7 +181,7 @@ class ContextBuilder:
                         gm_match.iloc[0].to_dict()
                     )
 
-        # 4. History and Past User Behavior Evaluation
+        # 4. Deterministic History Selection
         if not self.msg_hist_df.empty:
             if conv_type == "business" and pd.notna(biz_id):
                 past_msgs = self.msg_hist_df[
@@ -215,16 +240,27 @@ class ContextBuilder:
                         mutes > 0
                     )
 
+                # Deterministic selection: sort by creation date descending
+                sort_col = (
+                    "created_at"
+                    if "created_at" in merged.columns
+                    else "message_id"
+                )
                 recent_hist = (
-                    merged.sort_values("created_at", ascending=False)
-                    .head(3)
+                    merged.sort_values(sort_col, ascending=False)
+                    .head(self.max_history_items)
                     .to_dict("records")
                 )
+
                 context["user_sender_history"] = recent_hist
-                context["evidence_ids"] = [
+                raw_ids = [
                     r["message_id"]
                     for r in recent_hist
                     if "message_id" in r and pd.notna(r["message_id"])
                 ]
+                context["evidence_ids"] = raw_ids
+                context["evidence_formatted"] = self.format_evidence_ids(
+                    raw_ids
+                )
 
         return context

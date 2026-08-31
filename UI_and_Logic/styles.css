@@ -1,0 +1,138 @@
+*{
+    font-family: 'Roboto';
+    color: #747F85
+}
+body{
+    overflow-y: hidden;
+    background-color: black;
+}
+button{
+    background-color: #153442;
+    color: white;
+    border-radius: 5px;
+}
+button:hover{
+    background-color: #747F85;
+    color: black
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; 
+}
+.text .top,.messages .message{
+    color: white;
+}
+.messages {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: auto;
+    align-items: flex-start; 
+    width: 100%; 
+    gap: 10px;
+}
+
+.message{
+    background-color: #345A4D;
+    border-radius: 8px;
+    padding: 10px 14px;
+    
+    max-width: 65%; 
+    width: fit-content;
+    
+    overflow-wrap: anywhere; 
+    word-break: break-word; 
+    white-space: pre-wrap;   
+    color: #FFFFFF;
+
+    display: flex;
+    flex-direction: column;
+
+}
+textarea{
+    flex-grow: 1;
+    background-color: #2F3A40;
+    color: white;
+    border-radius: 5px;
+    resize: none;
+}
+.header{
+    display: flex;
+    justify-content: center;
+}
+img{
+    aspect-ratio: 1;
+}
+.container,.sidebar,.conversation,.input,.text{
+    display:flex;
+    background-color: #091D26;
+}
+.top_bar, .input{
+    background-color: #242B31;
+    padding:10px;
+    border-radius: 5px;
+}
+.sidebar{
+    background-color: #161B1F;
+    flex-shrink: 0;
+}
+.input{
+    flex-direction: row;
+    
+}
+.owner,.user,.other{
+    display: flex;
+    align-items: flex-start;
+}
+.text{
+    flex-direction: column;
+    padding:10px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    background-color: inherit;
+    width: fit-content;
+    overflow-wrap: anywhere; 
+    word-break: break-word; 
+    white-space: pre-wrap;   
+}
+.bottom{
+    align-self: flex-end;
+    margin-top: 5px;
+}
+.top{
+    align-self: flex-start;
+    margin-bottom: 5px;
+}
+.container{
+    height: 85vh;
+    max-height: 85vh;
+    width: 95vw;
+    max-width: 95vw;
+}
+.sidebar,.conversation, body{
+    flex-direction: column;
+    padding:20px;
+}
+.conversation{
+    justify-content: space-between;
+    flex-grow: 1;
+}
+.messages,.users{
+    overflow-y: auto;
+    border-top: 1px solid #747F85;
+    padding-top: 10px
+}
+.top_bar{
+    margin-bottom: 30px;
+}
+.input{
+    justify-content: space-between;
+    gap: 10px;
+}
+.message-text{
+    color: white
+}
+
+.message.status-loading { border: 2px solid #4A5568; color: #CBD5E0; }
+.message.status-notify  { border: 2px solid #49dd58; color: #FFFFFF; } /* Red alert badge */
+.message.status-digest  { border: 2px solid #e17935; color: #FFFFFF; } /* Orange digest badge */
+.message.status-mute    { border: 2px solid #c92504; color: #E2E8F0; } /* Muted gray badge */
+.message.status-error   { border: 2px solid #742A2A; color: #FEB2B2; }

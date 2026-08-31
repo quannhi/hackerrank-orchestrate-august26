@@ -242,14 +242,16 @@ This results in:
 
 ```bash
 # 1. Setup virtual environment & activate
-python3.11 -m venv .venv && source .venv/bin/activate
+python3.14 -m venv .venv && source .venv/bin/activate
 
 # 2. Install dependencies
-pip install -r requirements.txt
+pip install -r code/requirements.txt
 
 # 3. Configure API key
-echo "GEMINI_API_KEY=your_gemini_api_key_here" > .env
+echo "YOUR GEMINI API KEY HERE" > .env
 
-# 4. Run full pipeline → generates final output.csv
-python code/main.py
+# 4. Start server
+cd code
+uvicorn server:app --reload --port 8000
+
 ```
