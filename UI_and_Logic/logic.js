@@ -5,14 +5,27 @@ const conversation = document.querySelector('.conversation'),
       messages = document.querySelector('.messages'),
       user = document.querySelector('.user')
 
-
-function createLists(){
+async function loadAndParseJSON() {
+    try {
+        const response = await fetch('./information.json');
+        const data = await response.json(); 
+        
+        return data
+    } catch (error) {
+        console.error("Failed to parse JSON:", error);
+    }
+}
+async function createLists(){
+    const information = await loadAndParseJSON()
+    console.log(information)
     // create users list to choose
     let width_owner = top_bar_owner.offsetWidth,
         is_open = false
     
     const user_choice = document.createElement('select'),
-          img = document.createElement('img')
+          img = document.createElement('img'),
+          top_text = top_bar_owner.querySelector('.top.owner'),
+          bottom_text = top_bar_owner.querySelector('.bottom.owner')
     
     img.src='icons/placeholder_icon.png'
     img.style.height = '75px'
@@ -23,24 +36,34 @@ function createLists(){
 
     const option = document.createElement('option')
     option.style.minHeight= user.offsetHeight + 'px'
-    option.addEventListener('click', (event)=>{
-        
-    })
 
+    for (let user_info of Object.values(information)){
+        const clone = option.cloneNode(true),
+              clone_user = user.cloneNode(true),
+              top_text_clone = clone_user.querySelector('.top'),
+              bottom_text_clone = clone_user.querySelector('.bottom')
+
+        clone.addEventListener('click', (event)=>{
+            clone.selected = true
+            top_text.textContent = top_text_clone.textContent
+            bottom_text.textContent = bottom_text_clone.textContent
+        })
+
+        clone.value = user_info.user_id
+        top_text_clone.textContent = user_info.archetype
+        bottom_text_clone.textContent = user_info.description
+        clone.appendChild(clone_user)
+        user_choice.appendChild(clone)
+        console.log('processed an user')
+    }
 
     top_bar_owner.appendChild(user_choice)
     // linking the above list to the top_bar_owner
     top_bar_owner.addEventListener('click', (event)=>{
-        const clone = option.cloneNode(true),
-              clone_user = user.cloneNode(true)
-        clone.value = 'placeholder'
-        clone.appendChild(clone_user)
-        user_choice.appendChild(clone)
         user_choice.showPicker()
     })
 }  
  createLists()
-
 // Message/sending handling
 input.addEventListener('keydown', async (event) => {
     // Prevent default newline on Enter (allow Shift+Enter for newline)
