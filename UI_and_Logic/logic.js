@@ -5,7 +5,7 @@ function parseCSV(url) {
       header: true,
       download: true,
       complete: function(results) {
-        resolve(results.data); // Resolves the promise with the iterable array
+        resolve(results.data); 
       },
       error: function(error) {
         reject(error);
@@ -19,12 +19,17 @@ const conversation = document.querySelector('.conversation'),
       top_bar_owner = document.querySelector('.owner'),
       messages = document.querySelector('.messages'),
       users = document.querySelector('.users'),
-      user = document.querySelector('.user')
+      user = document.querySelector('.user'),
+      scam_btn = document.querySelector('#scam'),
+      time_limited_btn = document.querySelector('#time-sensitive'),
+      personal = document.querySelector('#urgent')
 
 function resetUsers(){
     users.innerHTML = ''
 }
-
+scam_btn.addEventListener('click', () => input.value = 'Congratulations! You have won $5,000 in our official monthly giveaway. Click here immediately to claim your funds via instant wire transfer: http://bit.ly/secure-claim-win')
+time_limited_btn.addEventListener('click', () => input.value = 'Flash Sale: Get 40% off all course subscriptions for the next 3 hours. Use code FLASH40 at checkout before midnight.') 
+personal.addEventListener('click', () => input.value = "Hey, where are you? Mum tried calling you twice—please call her back right away, it's urgent")
 async function loadAndParseJSON() {
     try {
         const response = await fetch('./information.json');
@@ -73,8 +78,11 @@ async function createLists(){
         user_choice.appendChild(clone)
 
         clone.addEventListener('click', (event)=>{
+            const top_text_other = top_bar_other.querySelector('.top'),
+                  bottom_text_other = top_bar_other.querySelector('.bottom')
             resetUsers()
             messages.innerHTML=''
+            top_text_other.textContent = "Placeholder 'text top'"
             let history = {}
             clone.selected = true
             top_text.textContent = top_text_clone.textContent
@@ -101,6 +109,8 @@ async function createLists(){
                     bottom_text_sender = clone_sender.querySelector('.bottom')
                 top_text_sender.textContent = sender
                 clone_sender.addEventListener('click', (event)=>{
+                    
+                    top_text_other.textContent = top_text_sender.textContent
                     messages.innerHTML = ''
                     const unsorted = history[sender]
                     const dates = Object.keys(unsorted)
@@ -185,7 +195,8 @@ input.addEventListener('keydown', async (event) => {
         messages.scrollTop = messages.scrollHeight;
 
         // 2. Fetch active sender ID from UI (e.g., from top_bar or dropdown)
-        const selectedSenderId = top_bar_other.dataset.senderId || "SENDER_DEFAULT";
+        const selectedSenderId = top_bar_other.querySelector('.top').textContent || "SENDER_DEFAULT";
+        console.log(`history user id: ${selectedSenderId}`)
 
         try {
             // 3. Trigger API call to your Python backend
