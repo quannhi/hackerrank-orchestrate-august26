@@ -1,9 +1,29 @@
+import Papa from 'papaparse'
+function parseCSV(url) {
+  return new Promise((resolve, reject) => {
+    Papa.parse(url, {
+      header: true,
+      download: true,
+      complete: function(results) {
+        resolve(results.data); // Resolves the promise with the iterable array
+      },
+      error: function(error) {
+        reject(error);
+      }
+    });
+  });
+}
 const conversation = document.querySelector('.conversation'),
       input = document.querySelector('textarea'),
       top_bar_other = document.querySelector('.other'),
       top_bar_owner = document.querySelector('.owner'),
       messages = document.querySelector('.messages'),
+      users = document.querySelector('.users'),
       user = document.querySelector('.user')
+
+function resetUsers(){
+    users.innerHTML = ''
+}
 
 async function loadAndParseJSON() {
     try {
@@ -16,8 +36,10 @@ async function loadAndParseJSON() {
     }
 }
 async function createLists(){
-    const information = await loadAndParseJSON()
-    console.log(information)
+    const information_users = await loadAndParseJSON(),
+          information_history = await parseCSV('../dataset/message_history.csv')
+    console.log(information_users)
+    console.log(information_history)
     // create users list to choose
     let width_owner = top_bar_owner.offsetWidth,
         is_open = false
@@ -37,24 +59,84 @@ async function createLists(){
     const option = document.createElement('option')
     option.style.minHeight= user.offsetHeight + 'px'
 
-    for (let user_info of Object.values(information)){
+    for (let user_info of Object.values(information_users)){
+        // creating the user options
         const clone = option.cloneNode(true),
               clone_user = user.cloneNode(true),
               top_text_clone = clone_user.querySelector('.top'),
               bottom_text_clone = clone_user.querySelector('.bottom')
-
-        clone.addEventListener('click', (event)=>{
-            clone.selected = true
-            top_text.textContent = top_text_clone.textContent
-            bottom_text.textContent = bottom_text_clone.textContent
-        })
 
         clone.value = user_info.user_id
         top_text_clone.textContent = user_info.archetype
         bottom_text_clone.textContent = user_info.description
         clone.appendChild(clone_user)
         user_choice.appendChild(clone)
-        console.log('processed an user')
+
+        clone.addEventListener('click', (event)=>{
+            resetUsers()
+            messages.innerHTML=''
+            let history = {}
+            clone.selected = true
+            top_text.textContent = top_text_clone.textContent
+            bottom_text.textContent = bottom_text_clone.textContent
+            // creating the list of senders
+            const interacted = user_info.interacted_users
+            for (let sender of interacted){
+                for (let message of information_history){
+                    let senderId = message.sender_user_id
+                    if (senderId === sender) {
+                        console.log(message.created_at);
+
+                        // 2. Safely initialize sender entry in history if it doesn't exist
+                        if (!history[senderId]) {
+                            history[senderId] = {};
+                        }
+
+                        // 3. Assign message text directly to the specific sender object
+                        history[senderId][message.created_at] = message.message_text;
+                    }
+                }
+                const clone_sender = user.cloneNode(true),
+                    top_text_sender = clone_sender.querySelector('.top'),
+                    bottom_text_sender = clone_sender.querySelector('.bottom')
+                top_text_sender.textContent = sender
+                clone_sender.addEventListener('click', (event)=>{
+                    messages.innerHTML = ''
+                    const unsorted = history[sender]
+                    const dates = Object.keys(unsorted)
+                    dates.sort((a,b) => a.localeCompare(b))
+                    const sorted = dates.reduce((acc, key)=>{
+                        acc[key] = unsorted[key]
+                        return acc
+                    },{})
+                    console.log(sorted)
+                    let seen_dates = []
+                    for (const [time,message] of Object.entries(sorted)){
+                        if (!message) continue
+                        const date_and_time = time.split(' ')
+                        const messageEl = document.createElement('div'),
+                              timeEl = document.createElement('div'),
+                              dateEl = document.createElement('div')
+                        messageEl.classList.add('message', 'received');
+                        messageEl.innerHTML = `
+                            <div class="message-text">${escapeHtml(message)}</div>
+                        `;
+                        if (!seen_dates[-1] || date_and_time[0] !== seen_dates[-1]){
+                            dateEl.textContent = date_and_time[0]
+                            dateEl.classList.add('date')
+                            messages.appendChild(dateEl)
+                        } 
+                        timeEl.textContent=date_and_time[1]
+                        timeEl.classList.add('time')
+                        messageEl.appendChild(timeEl)
+                        messages.appendChild(messageEl);
+                        
+                    }
+                    messages.scrollTop = messages.scrollHeight;
+                })
+                users.appendChild(clone_sender)
+            }
+        })
     }
 
     top_bar_owner.appendChild(user_choice)
@@ -73,7 +155,6 @@ input.addEventListener('keydown', async (event) => {
         const text = input.value.trim();
         if (!text) return;
 
-        // Clear input field
         input.value = '';
 
         // 1. Create and append the message DOM element instantly
@@ -89,12 +170,11 @@ input.addEventListener('keydown', async (event) => {
 
         const hours = now.getHours();       // 0 - 23
         const minutes = now.getMinutes();   // 0 - 59
-        const seconds = now.getSeconds();   // 0 - 59
 
         const time = document.createElement('div')
 
         // Example custom format (HH:MM:SS) with leading zeroes
-        const formattedTime = [hours, minutes, seconds]
+        const formattedTime = [hours, minutes]
         .map(unit => String(unit).padStart(2, '0'))
         .join(':');
 
@@ -131,9 +211,7 @@ input.addEventListener('keydown', async (event) => {
 
         } catch (error) {
             console.error("Routing request failed:", error);
-            const statusEl = messageEl.querySelector('.message-status');
-            statusEl.className = 'message-status status-error';
-            statusEl.textContent = 'FAILED';
+            messageEl.className = 'message status-error';
         }
     }
 });

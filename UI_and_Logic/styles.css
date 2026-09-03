@@ -36,7 +36,7 @@ button:hover{
     border-radius: 8px;
     padding: 10px 14px;
     
-    max-width: 65%; 
+    max-width: 60%; 
     width: fit-content;
     
     overflow-wrap: anywhere; 
@@ -52,6 +52,14 @@ button:hover{
 .time{
     color:#747F85;
     font-size: small;
+}
+.date{
+    background-color: #2F3A40;
+    color:#869299;
+    border-radius: 8px;
+    padding: 5px;
+    font-size: small;
+    align-self: center;
 }
 textarea{
     flex-grow: 1;
@@ -198,7 +206,7 @@ option:hover{
 }
 
 .message.status-loading { border: 2px solid #4A5568; color: #CBD5E0; }
-.message.status-notify  { border: 2px solid #49dd58; color: #FFFFFF; } /* Red alert badge */
-.message.status-digest  { border: 2px solid #e17935; color: #FFFFFF; } /* Orange digest badge */
-.message.status-mute    { border: 2px solid #c92504; color: #E2E8F0; } /* Muted gray badge */
+.message.status-notify  { border: 2px solid #49dd58; color: #FFFFFF; }
+.message.status-digest  { border: 2px solid #e17935; color: #FFFFFF; }
+.message.status-mute    { border: 2px solid #c92504; color: #E2E8F0; } 
 .message.status-error   { border: 2px solid #742A2A; color: #FEB2B2; }
