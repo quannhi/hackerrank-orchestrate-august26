@@ -24,6 +24,11 @@ const conversation = document.querySelector('.conversation'),
       time_limited_btn = document.querySelector('#time-sensitive'),
       personal = document.querySelector('#urgent')
 
+// IMPORTANT INITAL USER ID
+let receiver_id = 'u_007',
+    business_id = ''
+
+
 function resetUsers(){
     users.innerHTML = ''
 }
@@ -85,14 +90,17 @@ async function createLists(){
             top_text_other.textContent = "Placeholder 'text top'"
             let history = {}
             clone.selected = true
+            receiver_id = clone.value
             top_text.textContent = top_text_clone.textContent
             bottom_text.textContent = bottom_text_clone.textContent
             // creating the list of senders
-            const interacted = user_info.interacted_users
-            for (let sender of interacted){
+            const interacted_users = user_info.interacted_users,
+                  interacted_businesses_names = user_info.interacted_businesses,
+                  interacted_businesses_ids = user_info.interacted_businesses_ids
+            for (let sender of interacted_users){
                 for (let message of information_history){
                     let senderId = message.sender_user_id
-                    if (senderId === sender) {
+                    if (senderId === sender && message.user_id === receiver_id) {
                         console.log(message.created_at);
 
                         // 2. Safely initialize sender entry in history if it doesn't exist
@@ -108,9 +116,10 @@ async function createLists(){
                     top_text_sender = clone_sender.querySelector('.top'),
                     bottom_text_sender = clone_sender.querySelector('.bottom')
                 top_text_sender.textContent = sender
+                bottom_text_sender.textContent = 'Personal Account'
                 clone_sender.addEventListener('click', (event)=>{
-                    
                     top_text_other.textContent = top_text_sender.textContent
+                    bottom_text_other.textContent = bottom_text_sender.textContent
                     messages.innerHTML = ''
                     const unsorted = history[sender]
                     const dates = Object.keys(unsorted)
@@ -131,7 +140,71 @@ async function createLists(){
                         messageEl.innerHTML = `
                             <div class="message-text">${escapeHtml(message)}</div>
                         `;
-                        if (!seen_dates[-1] || date_and_time[0] !== seen_dates[-1]){
+                        if (!seen_dates.at(-1) || date_and_time[0] != seen_dates.at(-1)){
+                            seen_dates.push(date_and_time[0])
+                            dateEl.textContent = date_and_time[0]
+                            dateEl.classList.add('date')
+                            messages.appendChild(dateEl)
+                        } 
+                        timeEl.textContent=date_and_time[1]
+                        timeEl.classList.add('time')
+                        messageEl.appendChild(timeEl)
+                        messages.appendChild(messageEl);
+                        
+                    }
+                    messages.scrollTop = messages.scrollHeight;
+                })
+                users.appendChild(clone_sender)
+            }
+            // CREATING BUSINESS ACCOUNTS
+            for (let i = 0; i < interacted_businesses_ids.length; i++){
+                let sender = interacted_businesses_ids[i]
+                let name = interacted_businesses_names[i]
+                for (let message of information_history){
+                    let senderId = message.business_id
+                    if (senderId === sender && message.user_id === receiver_id) {
+                        console.log(`BUSINESS MESSAGE CREATED AT ${message.created_at}`);
+
+                        // 2. Safely initialize sender entry in history if it doesn't exist
+                        if (!history[sender]) {
+                            history[sender] = {};
+                        }
+
+                        // 3. Assign message text directly to the specific sender object
+                        history[sender][message.created_at] = message.message_text;
+                    }
+                }
+                const clone_sender = user.cloneNode(true),
+                    top_text_sender = clone_sender.querySelector('.top'),
+                    bottom_text_sender = clone_sender.querySelector('.bottom')
+                top_text_sender.textContent = name
+                bottom_text_sender.textContent = 'Business Account'
+                clone_sender.addEventListener('click', (event)=>{
+                    top_text_other.textContent = top_text_sender.textContent
+                    bottom_text_other.textContent = bottom_text_sender.textContent
+                    messages.innerHTML = ''
+                    business_id = sender
+                    const unsorted = history[sender]
+                    const dates = Object.keys(unsorted)
+                    dates.sort((a,b) => a.localeCompare(b))
+                    const sorted = dates.reduce((acc, key)=>{
+                        acc[key] = unsorted[key]
+                        return acc
+                    },{})
+                    console.log(sorted)
+                    let seen_dates = []
+                    for (const [time,message] of Object.entries(sorted)){
+                        if (!message) continue
+                        const date_and_time = time.split(' ')
+                        const messageEl = document.createElement('div'),
+                              timeEl = document.createElement('div'),
+                              dateEl = document.createElement('div')
+                        messageEl.classList.add('message', 'received');
+                        messageEl.innerHTML = `
+                            <div class="message-text">${escapeHtml(message)}</div>
+                        `;
+                        if (!seen_dates.at(-1) || date_and_time[0] != seen_dates.at(-1)){
+                            seen_dates.push(date_and_time[0])
                             dateEl.textContent = date_and_time[0]
                             dateEl.classList.add('date')
                             messages.appendChild(dateEl)
@@ -195,8 +268,12 @@ input.addEventListener('keydown', async (event) => {
         messages.scrollTop = messages.scrollHeight;
 
         // 2. Fetch active sender ID from UI (e.g., from top_bar or dropdown)
-        const selectedSenderId = top_bar_other.querySelector('.top').textContent || "SENDER_DEFAULT";
+        let selectedSenderId = top_bar_other.querySelector('.top').textContent || "SENDER_DEFAULT";
+        if (top_bar_other.querySelector('.bottom').textContent == 'Business Account'){
+            selectedSenderId = business_id;
+        }
         console.log(`history user id: ${selectedSenderId}`)
+        console.log(`RECEIVER ID: ${receiver_id}`)
 
         try {
             // 3. Trigger API call to your Python backend
@@ -205,7 +282,8 @@ input.addEventListener('keydown', async (event) => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     text: text,
-                    sender_id: selectedSenderId
+                    sender_id: selectedSenderId,
+                    user_id: receiver_id
                 })
             });
 

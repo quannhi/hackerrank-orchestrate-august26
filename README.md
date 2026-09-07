@@ -5,6 +5,38 @@ Out of 22,000+ total registrations and nearly 2000 submissions, this one ranked 
 This was my first ever attempt at a hackathon, and it proved to be a valuable learning experience
 
 There is still much to be learned, I am looking forward to future orchestrates and hackathons!
+
+## Quickstart for web
+
+```bash
+# 1. Setup virtual environment & activate
+python3.14 -m venv .venv && source .venv/bin/activate
+
+# 2. Install dependencies
+pip install -r code/requirements.txt
+
+# 3. Configure API key
+echo "YOUR GEMINI API KEY HERE" > .env
+
+# 4. Start server
+uvicorn server:app --reload --port 8000
+
+```
+---
+## Quickstart for terminal
+
+```bash
+# 1. Setup virtual environment & activate
+python3.14 -m venv .venv && source .venv/bin/activate
+
+# 2. Install dependencies (if this is first time)
+pip install -r code/requirements.txt
+
+# 3. Configure API key
+echo "YOUR GEMINI API KEY HERE" > .env
+
+# 4. Run the main file
+python code/main.py
 # Inbox Intelligence Agent
 
 A hybrid AI message routing system that automatically filters, prioritizes, and explains incoming messages using deterministic rules, retrieval-augmented reasoning, and a Large Language Model.
@@ -236,22 +268,3 @@ This results in:
 └── README.md                   # System documentation
 ```
 
----
-
-## Quickstart
-
-```bash
-# 1. Setup virtual environment & activate
-python3.14 -m venv .venv && source .venv/bin/activate
-
-# 2. Install dependencies
-pip install -r code/requirements.txt
-
-# 3. Configure API key
-echo "YOUR GEMINI API KEY HERE" > .env
-
-# 4. Start server
-cd code
-uvicorn server:app --reload --port 8000
-
-```

@@ -10,6 +10,7 @@ from router_llm import AsyncLLMRouter
 from context_builder import ContextBuilder
 
 history_df = pd.read_csv('../dataset/message_history.csv')
+events_df = pd.read_csv('../dataset/message_events.csv')
 
 app = FastAPI()
 
@@ -28,12 +29,20 @@ llm_router = AsyncLLMRouter(request_timeout=30.0)
 
 class MessageInput(BaseModel):
     text: str
-    sender_id: str = "DEFAULT_SENDER"
+    sender_id: str
+    user_id: str
 
 @app.post("/api/analyze")
 async def analyze_message(payload: MessageInput):
+    print(f'payload.sender_id: {payload.sender_id} and payload.user_id: {payload.user_id}')
     try:
-        filtered_history_df = history_df[history_df['sender_user_id'] == payload.sender_id]
+        sender_splitted = payload.sender_id.split('_')
+        if sender_splitted[0] == 'u':
+            filtered_history_df = history_df[(history_df['sender_user_id'] == payload.sender_id) & (history_df['user_id'] == payload.user_id)]
+        elif sender_splitted[0] == 'business':
+            filtered_history_df = history_df[(history_df['business_id'] == payload.sender_id) & (history_df['user_id'] == payload.user_id)]
+        filtered_events_df = events_df[(events_df['user_id'] == payload.user_id) & (
+            events_df['message_id'].isin(filtered_history_df['message_id']))]
         # Pass 1: Tier 1 Regex Scanner
         action, msg_type, reason = classify_tier1_regex(payload.text)
         
@@ -65,8 +74,9 @@ async def analyze_message(payload: MessageInput):
             },
             # Pass records as dictionaries with keys expected by router_llm.py
             "user_sender_history": filtered_history_df.to_dict(orient="records"),
-            "evidence_formatted": ", ".join(filtered_history_df['message_id'].astype(str).tolist()) or "none",
-            "evidence_message_ids": filtered_history_df['message_id'].tolist()
+            'user_sender_events' : filtered_events_df,
+            "evidence_formatted": ", ".join(filtered_history_df['message_text'][0:3].astype(str).tolist()) or "none",
+            "evidence_message_ids": ", ".join(filtered_history_df['message_id'][0:3].astype(str).tolist()) or "none"
         }
 
         # Pass 3: Tier 2 Gemini Flash Lite Call

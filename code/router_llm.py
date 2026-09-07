@@ -62,62 +62,81 @@ class AsyncLLMRouter:
         flags = context.get("security_flags", {})
         metrics = context.get("metrics", {})
         past_msgs = context.get("user_sender_history", [])
-        evidence_formatted = context.get("evidence_formatted", "none")
+        past_events = context.get('user_sender_events', [])
+        evidence_message_ids = context.get("evidence_message_ids", "none")
+        evidence_text_formatted = context.get('evidence_formatted', 'none')
+
+        has_prior_user_mutes = False
+        has_prior_user_reports = False
 
         history_summary = []
+        conv_type = []
         for pm in past_msgs:
+            if pm.get('conversation_type') not in conv_type:
+                conv_type.append(pm.get('conversation_type'))
+            relevant_row = past_events.loc[past_events['message_id'] == pm.get('message_id')].to_dict(orient = 'records')
+            message_events = relevant_row[0] # because orient records returns a list
+            if message_events.get('muted_after_message') == 1:
+                has_prior_user_mutes = True
+            if message_events.get('message_reported') == 1:
+                has_prior_user_reports = True
             history_summary.append(
-                f"- [Evidence ID: {pm.get('message_id')}] Text: '{pm.get('message_text')}' | "
-                f"Replied: {pm.get('message_replied')}, Dismissed: {pm.get('notification_dismissed')}"
+                f"- [Evidence ID: {pm.get('message_id')}] Text: '{pm.get('message_text')}' Type: '{pm.get('conversation_type')}' | "
+                f"Replied: {message_events.get('message_replied') == 1}, Dismissed: {message_events.get('notification_dismissed') == 1}, Reaction Time Minutes: {message_events.get('reaction_time_minutes', 'did not reply')}, Muted after receiving: {message_events.get('muted_after_message') == 1}, Reported: {message_events.get('message_reported') == 1} "
             )
+        
         history_str = (
             "\n".join(history_summary)
             if history_summary
             else "No prior message history."
         )
-
+        print(history_str)
         return f"""
-        You are an intelligent notification router. Analyze the following incoming message and its context to decide its routing action and category.
+        You are an intelligent notification router. Analyze the incoming message and its context to determine both the routing action ("notify", "digest", "mute") and the category ("personal", "business", "security", "promotional").
 
-        [CRITICAL EVALUATION POLICY - STRICT NOTIFY vs. DIGEST SEPARATION]
-        1. DEFAULT TO DIGEST: Assume messages belong in 'digest' unless strict criteria for 'notify' or 'mute' are met. DIGEST if the other party explicitly mentions no urgency or it is just a general question/request.
-        2. NOTIFY CRITERIA (Strictly Limited):
-        - ONLY use 'notify' for time-critical emergencies, direct personal 1:1 critical messages, or generally messages that will have a significant negative impact on the user's physical or social well-being if it isnt given attention, or active security alerts.
-        - DO NOT use 'notify' for marketing, order status, time-limited sales, business updates, or routine calendar reminders—even if they contain words like "urgent", "limited time", or "action required".
-        3. UNKNOWN / FIRST-CONTACT RULE:
-        - If user history is empty ('none') and sender is a business or unknown party, route to 'digest' by default. Never escalate first-contact standard messages to 'notify'.
-        
-        [ROUTING RULES]
-        - ACTION 'mute': Use for insults, threats, violent language, scam, spam, heavy forwards, or domain_mismatch.
-        - ACTION 'notify': Use for urgent matters, critical events, or requested payment updates.
-        - ACTION 'digest': Default criteria. Use for interactions such as promotions, standard business updates, or interactions that can be safely delayed.
+        [PRIORITY EVALUATION HIERARCHY]
+        Evaluate rules strictly in this order (1 -> 2 -> 3):
 
-        [EVIDENCE REQUIREMENTS]
-        Available Evidence IDs for this context: {evidence_formatted}
-        If evidence IDs exist (not 'none'), your reason MUST explicitly mention the evidence ID(s) and signal.
+        1. RULE 1: MUTE (Highest Priority)
+        - MUST ROUTE to 'mute' if ANY of the following apply:
+            * Content contains scams, spam, threats, or insults.
+            * 'Domain Mismatch' is True.
+            * Historical context shows prior user reports/mutes for this specific sender or topic/category/format.
+            * High forward count (>3) paired with unverified business/unknown senders.
 
-        [MESSAGE DETAILS]
+        2. RULE 2: NOTIFY (Strictly Limited)
+        - Route to 'notify' ONLY if the message meets critical real-time thresholds:
+            * Immediate physical, financial, or social well-being threat/emergency.
+            * Direct 1:1 personal message requiring immediate active human coordination.
+            * Critical, real-time security alerts (e.g., 2FA codes, unauthorized login attempts).
+        - EXCLUSIONS: Never use 'notify' for routine payment receipts, order statuses, marketing, calendar items, or promotional urgency tricks ("act fast", "limited time").
+
+        3. RULE 3: DIGEST (Default Action)
+        - Route to 'digest' for ALL other standard communications:
+            * Cold-start / first-contact messages from unknown parties or businesses.
+            * General inquiries, routine business updates, order tracking, and non-urgent personal chatter.
+
+        [EVIDENCE CITATION REQUIREMENT]
+        Available Evidence IDs: {evidence_message_ids}
+        - If Evidence IDs are present (not 'none'), your generated reason MUST explicitly reference the specific evidence ID(s) and signal (e.g., "Matched evidence ID message_0017 showing past dismissal").
+
+        [INPUT CONTEXT]
         - Message ID: {context.get('message_id')}
         - Text: "{context.get('message_text', '')}"
-        - Conversation Type: {context.get('conversation_type')}
+        - Conversation Type: {', '.join(conv_type)}
         - Forwarded Count: {context.get('forwarded_count')}
-
-        [SECURITY & HISTORY CONTEXT]
-        - Domain Mismatch: {flags.get('domain_mismatch')}
-        - Business Verified: {flags.get('is_business_verified')}
-        - Prior User Reports: {flags.get('has_prior_user_reports')}
-        - Prior User Mutes: {flags.get('has_prior_user_mutes')}
-        - User Reply Rate: {metrics.get('reply_rate', 0.0):.2f}
+        - Security Flags: Domain Mismatch={flags.get('domain_mismatch')}, Verified Business={flags.get('is_business_verified')}
+        - Sender History Signals: Prior Reports={has_prior_user_reports}, Prior Mutes={has_prior_user_mutes}, Reply Rate={metrics.get('reply_rate', 0.0):.2f}
 
         [HISTORICAL MESSAGES]
         {history_str}
         """
 
     async def _execute_single_call(self, context: dict) -> dict:
-        evidence_str = context.get("evidence_formatted", "none")
+        evidence_str = context.get("evidence_message_ids", "none")
         media_path = context.get("media_path")
         uploaded_file = None
-
+        print(evidence_str)
         try:
             if media_path and os.path.exists(media_path):
                 uploaded_file = await asyncio.to_thread(

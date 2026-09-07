@@ -149,8 +149,11 @@ option{
 option::checkmark{
     display: none;
 }
-option:hover{
+
+option:checked{
     border: 1px solid white;
+    background-color: #345A4D;
+    padding:0
 }
 .text{
     flex-direction: column;

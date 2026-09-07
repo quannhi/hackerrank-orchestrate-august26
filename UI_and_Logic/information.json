@@ -1,46 +1,27 @@
 {
-  "Ad_Avoider": {
+  "u_007": {
     "user_id": "u_007",
-    "archetype": "Ad Avoider",
-    "description": "Frequently ignores business/promotions.",
-    "dnd_window": "22:00-07:00",
+    "archetype": "The Silencer",
+    "description": "Frequently mutes conversations after receiving messages.",
+    "total_messages": 22,
     "interacted_users": [
       "u_041",
-      "u_042",
       "u_051",
+      "u_042",
       "u_052"
     ],
-    "evidence_message_ids": {
-      "replied_messages": [
-        "message_0367"
-      ],
-      "reported_messages": [],
-      "dismissed_messages": [
-        "message_0017",
-        "message_0018",
-        "message_0034",
-        "message_0052",
-        "message_0083",
-        "message_0084",
-        "message_0103",
-        "message_0104",
-        "message_0111",
-        "message_0112"
-      ],
-      "ignored_messages": [
-        "message_0017",
-        "message_0018",
-        "message_0034",
-        "message_0052",
-        "message_0083",
-        "message_0084"
-      ],
-      "muted_after_messages": [
-        "message_0017",
-        "message_0018",
-        "message_0034"
-      ]
-    },
+    "interacted_businesses": [
+      "Flipkart",
+      "Target",
+      "Swish",
+      "Thrillophilia"
+    ],
+    "interacted_businesses_ids": [
+      "business_003",
+      "business_067",
+      "business_094",
+      "business_092"
+    ],
     "habits_by_type": {
       "business": {
         "received_count": 16,
@@ -49,231 +30,139 @@
         "reported": 0,
         "ignored": 16
       },
+      "personal": {
+        "received_count": 2,
+        "replied": 1,
+        "dismissed": 0,
+        "reported": 0,
+        "ignored": 1
+      },
       "group": {
         "received_count": 4,
         "replied": 0,
         "dismissed": 3,
         "reported": 0,
-        "ignored": 3
-      },
-      "personal": {
-        "received_count": 2,
-        "replied": 1,
-        "dismissed": 0,
-        "reported": 0,
-        "ignored": 0
+        "ignored": 4
       }
     }
   },
-  "Personal_Ghoster": {
-    "user_id": "u_033",
-    "archetype": "Personal Ghoster",
-    "description": "Ignores personal and direct messages.",
-    "dnd_window": "22:00-08:00",
-    "interacted_users": [
-      "u_048",
-      "u_049"
-    ],
-    "evidence_message_ids": {
-      "replied_messages": [],
-      "reported_messages": [
-        "message_0025"
-      ],
-      "dismissed_messages": [
-        "message_0025",
-        "message_0050",
-        "message_0115",
-        "message_0116",
-        "message_0224"
-      ],
-      "ignored_messages": [
-        "message_0025",
-        "message_0050",
-        "message_0115",
-        "message_0116",
-        "message_0224"
-      ],
-      "muted_after_messages": [
-        "message_0025",
-        "message_0050"
-      ]
-    },
-    "habits_by_type": {
-      "group": {
-        "received_count": 6,
-        "replied": 0,
-        "dismissed": 6,
-        "reported": 1,
-        "ignored": 6
-      },
-      "personal": {
-        "received_count": 2,
-        "replied": 0,
-        "dismissed": 2,
-        "reported": 0,
-        "ignored": 2
-      },
-      "business": {
-        "received_count": 2,
-        "replied": 0,
-        "dismissed": 2,
-        "reported": 0,
-        "ignored": 2
-      }
-    }
-  },
-  "The_Vigilante": {
-    "user_id": "u_040",
+  "u_005": {
+    "user_id": "u_005",
     "archetype": "The Vigilante",
     "description": "Aggressively reports incoming messages.",
-    "dnd_window": "00:00-07:00",
+    "total_messages": 17,
     "interacted_users": [
-      "u_049",
-      "u_052",
-      "u_054"
-    ],
-    "evidence_message_ids": {
-      "replied_messages": [],
-      "reported_messages": [
-        "message_0163",
-        "message_0164",
-        "message_0203",
-        "message_0204",
-        "message_0211",
-        "message_0212",
-        "message_0357",
-        "message_0389"
-      ],
-      "dismissed_messages": [
-        "message_0048",
-        "message_0163",
-        "message_0164",
-        "message_0203",
-        "message_0204"
-      ],
-      "ignored_messages": [
-        "message_0048",
-        "message_0163",
-        "message_0164"
-      ],
-      "muted_after_messages": [
-        "message_0048",
-        "message_0163"
-      ]
-    },
-    "habits_by_type": {
-      "business": {
-        "received_count": 4,
-        "replied": 0,
-        "dismissed": 4,
-        "reported": 1,
-        "ignored": 4
-      },
-      "group": {
-        "received_count": 9,
-        "replied": 0,
-        "dismissed": 9,
-        "reported": 6,
-        "ignored": 9
-      },
-      "personal": {
-        "received_count": 2,
-        "replied": 0,
-        "dismissed": 1,
-        "reported": 1,
-        "ignored": 1
-      }
-    }
-  },
-  "The_Chatterbox": {
-    "user_id": "u_031",
-    "archetype": "The Chatterbox",
-    "description": "Responds to almost all messages.",
-    "dnd_window": "21:30-06:30",
-    "interacted_users": [
-      "u_045"
-    ],
-    "evidence_message_ids": {
-      "replied_messages": [
-        "message_0329",
-        "message_0330",
-        "message_0331"
-      ],
-      "reported_messages": [],
-      "dismissed_messages": [],
-      "ignored_messages": [],
-      "muted_after_messages": []
-    },
-    "habits_by_type": {
-      "business": {
-        "received_count": 2,
-        "replied": 2,
-        "dismissed": 0,
-        "reported": 0,
-        "ignored": 0
-      },
-      "group": {
-        "received_count": 1,
-        "replied": 1,
-        "dismissed": 0,
-        "reported": 0,
-        "ignored": 0
-      }
-    }
-  },
-  "Group_Lurker": {
-    "user_id": "u_005",
-    "archetype": "Group Lurker",
-    "description": "Reads but never replies or dismisses.",
-    "dnd_window": "22:30-07:00",
-    "interacted_users": [
-      "u_041",
-      "u_048",
+      "u_054",
       "u_050",
-      "u_054"
+      "u_048",
+      "u_041"
     ],
-    "evidence_message_ids": {
-      "replied_messages": [
-        "message_0251",
-        "message_0407"
-      ],
-      "reported_messages": [
-        "message_0024",
-        "message_0087",
-        "message_0088",
-        "message_0147",
-        "message_0148"
-      ],
-      "dismissed_messages": [
-        "message_0019",
-        "message_0024",
-        "message_0087",
-        "message_0088"
-      ],
-      "ignored_messages": [
-        "message_0019",
-        "message_0024",
-        "message_0087"
-      ],
-      "muted_after_messages": [
-        "message_0019",
-        "message_0024"
-      ]
-    },
+    "interacted_businesses": [
+      "HDFC Bank",
+      "Chase",
+      "Zerodha"
+    ],
+    "interacted_businesses_ids": [
+      "business_002",
+      "business_050",
+      "business_082"
+    ],
     "habits_by_type": {
       "group": {
         "received_count": 14,
         "replied": 0,
         "dismissed": 10,
         "reported": 9,
-        "ignored": 10
+        "ignored": 5
       },
       "business": {
         "received_count": 3,
         "replied": 2,
         "dismissed": 0,
         "reported": 0,
+        "ignored": 1
+      }
+    }
+  },
+  "u_009": {
+    "user_id": "u_009",
+    "archetype": "Group Lurker",
+    "description": "Reads group messages but rarely or never replies.",
+    "total_messages": 22,
+    "interacted_users": [
+      "u_050",
+      "u_049",
+      "u_041",
+      "u_051"
+    ],
+    "interacted_businesses": [
+      "HDFC Bank"
+    ],
+    "interacted_businesses_ids": [
+      "business_002"
+    ],
+    "habits_by_type": {
+      "group": {
+        "received_count": 14,
+        "replied": 0,
+        "dismissed": 3,
+        "reported": 0,
+        "ignored": 14
+      },
+      "business": {
+        "received_count": 4,
+        "replied": 1,
+        "dismissed": 0,
+        "reported": 0,
+        "ignored": 3
+      },
+      "personal": {
+        "received_count": 4,
+        "replied": 1,
+        "dismissed": 0,
+        "reported": 0,
+        "ignored": 3
+      }
+    }
+  },
+  "u_014": {
+    "user_id": "u_014",
+    "archetype": "The Chatterbox",
+    "description": "Responds to a majority of messages.",
+    "total_messages": 12,
+    "interacted_users": [
+      "u_041",
+      "u_051"
+    ],
+    "interacted_businesses": [
+      "Green Cross Pharmacy",
+      "Aetna Health"
+    ],
+    "interacted_businesses_ids": [
+      "business_032",
+      "business_101"
+    ],
+    "habits_by_type": {
+      "personal": {
+        "received_count": 5,
+        "replied": 3,
+        "dismissed": 2,
+        "reported": 0,
+        "ignored": 2
+      },
+      "business": {
+        "received_count": 4,
+        "replied": 4,
+        "dismissed": 0,
+        "reported": 0,
         "ignored": 0
+      },
+      "group": {
+        "received_count": 3,
+        "replied": 1,
+        "dismissed": 0,
+        "reported": 0,
+        "ignored": 2
       }
     }
   }
