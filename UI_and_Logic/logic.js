@@ -165,12 +165,11 @@ async function createLists(){
                     if (senderId === sender && message.user_id === receiver_id) {
                         console.log(`BUSINESS MESSAGE CREATED AT ${message.created_at}`);
 
-                        // 2. Safely initialize sender entry in history if it doesn't exist
+                        // Safely initialize sender entry in history if it doesn't exist
                         if (!history[sender]) {
                             history[sender] = {};
                         }
 
-                        // 3. Assign message text directly to the specific sender object
                         history[sender][message.created_at] = message.message_text;
                     }
                 }
@@ -231,7 +230,6 @@ async function createLists(){
  createLists()
 // Message/sending handling
 input.addEventListener('keydown', async (event) => {
-    // Prevent default newline on Enter (allow Shift+Enter for newline)
     if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
         
@@ -258,7 +256,6 @@ input.addEventListener('keydown', async (event) => {
 
         const time = document.createElement('div')
 
-        // Example custom format (HH:MM:SS) with leading zeroes
         const formattedTime = [hours, minutes]
         .map(unit => String(unit).padStart(2, '0'))
         .join(':');
@@ -270,7 +267,7 @@ input.addEventListener('keydown', async (event) => {
         messages.appendChild(messageContainer);
         messages.scrollTop = messages.scrollHeight;
 
-        // 2. Fetch active sender ID from UI (e.g., from top_bar or dropdown)
+        // 2. Fetch active sender ID 
         let selectedSenderId = top_bar_other.querySelector('.top').textContent || "SENDER_DEFAULT";
         if (top_bar_other.querySelector('.bottom').textContent == 'Business Account'){
             selectedSenderId = business_id;
@@ -279,7 +276,7 @@ input.addEventListener('keydown', async (event) => {
         console.log(`RECEIVER ID: ${receiver_id}`)
         const information_history = await parseCSV('../dataset/message_history.csv')
         try {
-            // 3. Trigger API call to your Python backend
+            // 3. Trigger API call
             const response = await fetch('http://localhost:8000/api/analyze', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -293,6 +290,7 @@ input.addEventListener('keydown', async (event) => {
             if (!response.ok) throw new Error('API server error');
 
             const result = await response.json();
+            
             const arrow_container = document.createElement('div'),
                   btn_arrow_icon = document.createElement('img')
             arrow_container.classList.add('arrowbtn')
@@ -300,43 +298,32 @@ input.addEventListener('keydown', async (event) => {
             btn_arrow_icon.src = 'icons/arrow_down.png'
             arrow_container.appendChild(btn_arrow_icon)
             messageEl.appendChild(arrow_container)
-            messageEl.addEventListener('click', (event)=>{
-                if (!btn_arrow_icon.classList.contains('flipped')){
-                    const child = event.target.closest('.message')
-                    const textContainer = child.querySelector('.message-text')
-                    textContainer.textContent += `\nACTION: ${result.action.toUpperCase()}\nReason: ${result.reason}\nEvidence: ${result.evidence_message_ids}`
-                    btn_arrow_icon.classList.add('flipped')
-                }
-                else if (btn_arrow_icon.classList.contains('flipped')){
-                    btn_arrow_icon.classList.remove('flipped')
-                }
-                const reasoningContainer = document.createElement('div')
-                reasoningContainer.textContent = `ACTION: ${result.action.toUpperCase()}\nReason: ${result.reason}\nEvidence: ${result.evidence_message_ids}`
-                messageContainer.appendChild(reasoningContainer)
-            })
+
+            const debugPanel = document.createElement('div');
+            debugPanel.classList.add('debug-panel', `action-${result.action.toLowerCase()}`);
+            debugPanel.innerHTML = `
+                <div class="debug-panel-header">
+                    <span class="debug-title">● ACTION: ${result.action.toUpperCase()}</span>
+                    <span class="debug-close">✕</span>
+                </div>
+                <div class="debug-panel-content">
+                    <div class="debug-line"><strong>Reason:</strong> ${escapeHtml(result.reason)}</div>
+                    <div class="debug-line"><strong>Evidence:</strong> ${escapeHtml(result.evidence_message_ids)}</div>
+                </div>
+            `;
+            messageContainer.appendChild(debugPanel);
+
+            // Toggle debug line on message click
+            messageEl.addEventListener('click', () => {
+                btn_arrow_icon.classList.toggle('flipped');
+                debugPanel.classList.toggle('open');
+                messages.scrollTop = messages.scrollHeight;
+            });
+
             console.log(result)
 
-            // 4. Update the DOM bubble with the agent's decision badge and details
+            // 4. Update class
             messageEl.classList.replace('status-loading', `status-${result.action.toLowerCase()}`)
-            messageEl.title = `ACTION: ${result.action.toUpperCase()}\nReason: ${result.reason}\nEvidence: ${result.evidence_message_ids}`;
-            
-            // add concrete reasoning
-            console.log ('REASONING PROCESS STARTED')
-            const evidence_ids = result.evidence_message_ids.split(', ')
-            for (const id of evidence_ids){
-                console.log(id)
-                for (const message of information_history){
-                    const message_id = message.message_id
-                    if (message_id == id){
-                        console.log(`MATCHED ID: ${id}`)
-                        const message_text = document.createElement('div')
-                        message_text.textContent = 'EVIDENCE:\n'
-                        message_text.textContent += message.message_text
-                        messageEl.appendChild(message_text)
-                    }
-                }
-            }
-            console.log('REASONING STOPPED')
 
         } catch (error) {
             console.error("Routing request failed:", error);
@@ -345,7 +332,6 @@ input.addEventListener('keydown', async (event) => {
     }
 });
 
-// Helper utility to sanitize html text nodes
 function escapeHtml(str) {
     return str.replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)

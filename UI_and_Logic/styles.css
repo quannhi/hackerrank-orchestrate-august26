@@ -119,6 +119,7 @@ img{
     border-radius: 5px;
     color: white;
     background-color: #161B1F;
+
 }
 .user_choice::picker(select) {
     appearance: base-select;
@@ -193,11 +194,13 @@ option:checked{
     flex-grow: 1;
 }
 .messages,.users{
+    cursor: pointer;
     overflow-y: auto;
     border-top: 1px solid #747F85;
     padding-top: 10px
 }
 .top_bar{
+    cursor: pointer;
     margin-bottom: 30px;
     z-index: 2;
     position: relative;
@@ -208,7 +211,7 @@ option:checked{
     gap: 10px;
 }
 
-.message-text{
+.message-text, strong{
     color: white
 }
 
@@ -234,4 +237,97 @@ option:checked{
 }
 .hidden-children{
     transform-style: preserve-3d;
+}
+.message-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.debug-panel {
+    width: 100%;
+    box-sizing: border-box;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+                opacity 0.25s ease, 
+                margin 0.3s ease;
+    margin-top: 0;
+    margin-bottom: 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
+}
+
+.debug-panel.open {
+    max-height: 180px;
+    opacity: 1;
+    margin-top: 6px;
+    margin-bottom: 10px;
+}
+
+.debug-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.debug-panel-content {
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.debug-line {
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.4;
+}
+
+.debug-close {
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.debug-panel.action-mute {
+    background-color: rgba(201, 37, 4, 0.15);
+    border-color: #c92504;
+    color: #fca5a5;
+}
+.debug-panel.action-mute .debug-panel-header {
+    background-color: rgba(201, 37, 4, 0.25);
+    color: #f87171;
+}
+
+.debug-panel.action-notify {
+    background-color: rgba(73, 221, 88, 0.12);
+    border-color: #49dd58;
+    color: #bbf7d0;
+}
+.debug-panel.action-notify .debug-panel-header {
+    background-color: rgba(73, 221, 88, 0.22);
+    color: #86efac;
+}
+
+.debug-panel.action-received {
+    background-color: rgba(225, 121, 53, 0.15);
+    border-color: #e17935;
+    color: #fed7aa;
+}
+.debug-panel.action-received .debug-panel-header {
+    background-color: rgba(225, 121, 53, 0.25);
+    color: #fdba74;
+}
+
+.debug-panel.action-error {
+    background-color: rgba(116, 42, 42, 0.2);
+    border-color: #742a2a;
+    color: #fca5a5;
 }

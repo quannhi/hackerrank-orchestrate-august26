@@ -10,6 +10,7 @@ There is still much to be learned, I am looking forward to future orchestrates a
 
 ```bash
 # 1. Setup virtual environment & activate
+**Right click on the code directory and open integrated terminal**
 python3.14 -m venv .venv && source .venv/bin/activate
 
 # 2. Install dependencies
