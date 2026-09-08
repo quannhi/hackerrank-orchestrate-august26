@@ -241,8 +241,10 @@ input.addEventListener('keydown', async (event) => {
         input.value = '';
 
         // 1. Create and append the message DOM element instantly
+        const messageContainer = document.createElement('div')
+        messageContainer.classList.add('message-container')
         const messageEl = document.createElement('div');
-        messageEl.classList.add('message', 'received');
+        messageEl.classList.add('message', 'received', 'hidden-children');
         
         messageEl.classList.add( 'status-loading')
         messageEl.innerHTML = `
@@ -264,7 +266,8 @@ input.addEventListener('keydown', async (event) => {
         time.textContent=formattedTime
         time.classList.add('time')
         messageEl.appendChild(time)
-        messages.appendChild(messageEl);
+        messageContainer.appendChild(messageEl)
+        messages.appendChild(messageContainer);
         messages.scrollTop = messages.scrollHeight;
 
         // 2. Fetch active sender ID from UI (e.g., from top_bar or dropdown)
@@ -274,7 +277,7 @@ input.addEventListener('keydown', async (event) => {
         }
         console.log(`history user id: ${selectedSenderId}`)
         console.log(`RECEIVER ID: ${receiver_id}`)
-
+        const information_history = await parseCSV('../dataset/message_history.csv')
         try {
             // 3. Trigger API call to your Python backend
             const response = await fetch('http://localhost:8000/api/analyze', {
@@ -290,13 +293,50 @@ input.addEventListener('keydown', async (event) => {
             if (!response.ok) throw new Error('API server error');
 
             const result = await response.json();
+            const arrow_container = document.createElement('div'),
+                  btn_arrow_icon = document.createElement('img')
+            arrow_container.classList.add('arrowbtn')
+            btn_arrow_icon.classList.add('icon_arrow')
+            btn_arrow_icon.src = 'icons/arrow_down.png'
+            arrow_container.appendChild(btn_arrow_icon)
+            messageEl.appendChild(arrow_container)
+            messageEl.addEventListener('click', (event)=>{
+                if (!btn_arrow_icon.classList.contains('flipped')){
+                    const child = event.target.closest('.message')
+                    const textContainer = child.querySelector('.message-text')
+                    textContainer.textContent += `\nACTION: ${result.action.toUpperCase()}\nReason: ${result.reason}\nEvidence: ${result.evidence_message_ids}`
+                    btn_arrow_icon.classList.add('flipped')
+                }
+                else if (btn_arrow_icon.classList.contains('flipped')){
+                    btn_arrow_icon.classList.remove('flipped')
+                }
+                const reasoningContainer = document.createElement('div')
+                reasoningContainer.textContent = `ACTION: ${result.action.toUpperCase()}\nReason: ${result.reason}\nEvidence: ${result.evidence_message_ids}`
+                messageContainer.appendChild(reasoningContainer)
+            })
+            console.log(result)
 
             // 4. Update the DOM bubble with the agent's decision badge and details
             messageEl.classList.replace('status-loading', `status-${result.action.toLowerCase()}`)
-            
-            
-            // Add hover/click tooltip showing grounded reason & evidence
             messageEl.title = `ACTION: ${result.action.toUpperCase()}\nReason: ${result.reason}\nEvidence: ${result.evidence_message_ids}`;
+            
+            // add concrete reasoning
+            console.log ('REASONING PROCESS STARTED')
+            const evidence_ids = result.evidence_message_ids.split(', ')
+            for (const id of evidence_ids){
+                console.log(id)
+                for (const message of information_history){
+                    const message_id = message.message_id
+                    if (message_id == id){
+                        console.log(`MATCHED ID: ${id}`)
+                        const message_text = document.createElement('div')
+                        message_text.textContent = 'EVIDENCE:\n'
+                        message_text.textContent += message.message_text
+                        messageEl.appendChild(message_text)
+                    }
+                }
+            }
+            console.log('REASONING STOPPED')
 
         } catch (error) {
             console.error("Routing request failed:", error);

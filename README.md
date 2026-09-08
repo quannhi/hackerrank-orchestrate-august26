@@ -37,6 +37,7 @@ echo "YOUR GEMINI API KEY HERE" > .env
 
 # 4. Run the main file
 python code/main.py
+```
 # Inbox Intelligence Agent
 
 A hybrid AI message routing system that automatically filters, prioritizes, and explains incoming messages using deterministic rules, retrieval-augmented reasoning, and a Large Language Model.

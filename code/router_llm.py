@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 class ActionEnum(str, Enum):
     notify = "notify"
-    digest = "digest"
+    received = "received"
     mute = "mute"
 
 
@@ -29,13 +29,13 @@ class MsgTypeEnum(str, Enum):
 
 class RouterDecision(BaseModel):
     action: ActionEnum = Field(
-        description="The routing action: notify, digest, or mute."
+        description="The routing action: notify, received, or mute."
     )
     message_type: MsgTypeEnum = Field(
         description="The specific category of the message."
     )
     reason: str = Field(
-        description="A 1-2 sentence explanation referencing evidence IDs explicitly if context exists."
+        description="A 1-2 receivedence explanation referencing evidence IDs explicitly if context exists."
     )
     confidence: float = Field(
         ge=0.0,
@@ -92,7 +92,7 @@ class AsyncLLMRouter:
         )
         print(history_str)
         return f"""
-        You are an intelligent notification router. Analyze the incoming message and its context to determine both the routing action ("notify", "digest", "mute") and the category ("personal", "business", "security", "promotional").
+        You are an intelligent notification router. Analyze the incoming message and its context to determine both the routing action ("notify", "received", "mute") and the category ("personal", "business", "security", "promotional").
 
         [PRIORITY EVALUATION HIERARCHY]
         Evaluate rules strictly in this order (1 -> 2 -> 3):
@@ -111,14 +111,14 @@ class AsyncLLMRouter:
             * Critical, real-time security alerts (e.g., 2FA codes, unauthorized login attempts).
         - EXCLUSIONS: Never use 'notify' for routine payment receipts, order statuses, marketing, calendar items, or promotional urgency tricks ("act fast", "limited time").
 
-        3. RULE 3: DIGEST (Default Action)
-        - Route to 'digest' for ALL other standard communications:
+        3. RULE 3: received (Default Action)
+        - Route to 'received' for ALL other standard communications:
             * Cold-start / first-contact messages from unknown parties or businesses.
             * General inquiries, routine business updates, order tracking, and non-urgent personal chatter.
 
         [EVIDENCE CITATION REQUIREMENT]
         Available Evidence IDs: {evidence_message_ids}
-        - If Evidence IDs are present (not 'none'), your generated reason MUST explicitly reference the specific evidence ID(s) and signal (e.g., "Matched evidence ID message_0017 showing past dismissal").
+        - If Evidence IDs are prereceived (not 'none'), your generated reason MUST explicitly reference the specific evidence ID(s) and signal (e.g., "Matched evidence ID message_0017 showing past dismissal").
 
         [INPUT CONTEXT]
         - Message ID: {context.get('message_id')}
@@ -198,7 +198,7 @@ class AsyncLLMRouter:
                 f"\n⚠️ TIMEOUT: Message {msg_id} exceeded {self.request_timeout}s limit. Applying fallback..."
             )
             return {
-                "action": "digest",
+                "action": "received",
                 "message_type": "unknown",
                 "reason": f"Fallback applied: Request timed out after {self.request_timeout} seconds.",
                 "confidence": 0.50,
@@ -207,7 +207,7 @@ class AsyncLLMRouter:
         except Exception as e:
             print(f"\n❌ ERROR: Message {msg_id} failed: {e}")
             return {
-                "action": "digest",
+                "action": "received",
                 "message_type": "unknown",
                 "reason": f"Fallback applied due to API error: {str(e)}",
                 "confidence": 0.50,

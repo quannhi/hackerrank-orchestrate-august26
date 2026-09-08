@@ -180,6 +180,10 @@ option:checked{
     width: 95vw;
     max-width: 95vw;
 }
+.message-container{
+    display: flex;
+    flex-direction: column;
+}
 .sidebar,.conversation, body{
     flex-direction: column;
     padding:20px;
@@ -208,8 +212,26 @@ option:checked{
     color: white
 }
 
-.message.status-loading { border: 2px solid #4A5568; color: #CBD5E0; }
-.message.status-notify  { border: 2px solid #49dd58; color: #FFFFFF; }
-.message.status-digest  { border: 2px solid #e17935; color: #FFFFFF; }
-.message.status-mute    { border: 2px solid #c92504; color: #E2E8F0; } 
-.message.status-error   { border: 2px solid #742A2A; color: #FEB2B2; }
+.message.status-loading   { border: 2px solid #4A5568; color: #CBD5E0; }
+.message.status-notify    { border: 2px solid #49dd58; color: #FFFFFF; }
+.message.status-received  { border: 2px solid #e17935; color: #FFFFFF; }
+.message.status-mute      { border: 2px solid #c92504; color: #E2E8F0; } 
+.message.status-error     { border: 2px solid #742A2A; color: #FEB2B2; }
+
+.arrowbtn{
+    display: flex;
+    justify-content: center;
+    border-radius: 6px;
+}
+.icon_arrow{
+    padding: 5px;
+    border-radius: 6px;
+    height: 10px;
+    width: 30px;
+}
+.flipped{
+    transform: rotate(0.5turn);
+}
+.hidden-children{
+    transform-style: preserve-3d;
+}

@@ -75,10 +75,10 @@ def classify_tier1_regex(message_text: str):
             "Unwanted chain letter, spam broadcast, or mass forward.",
         )
 
-    # 3. Simple standalone greetings -> Digest
+    # 3. Simple standalone greetings -> Received
     if GREETING_RE.match(text):
         return (
-            "digest",
+            "received",
             "greeting",
             "Harmless polite greeting with no immediate call to action.",
         )

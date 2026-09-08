@@ -41,7 +41,7 @@ async def process_tier2_batch(
             decision = {
                 "idx": idx,
                 "message_id": msg_id,
-                "action": decision_raw.get("action", "digest"),
+                "action": decision_raw.get("action", "received"),
                 "message_type": decision_raw.get("message_type", "unknown"),
                 "reason": decision_raw.get(
                     "reason", "Analyzed by LLM context router."

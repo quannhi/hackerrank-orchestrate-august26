@@ -75,8 +75,8 @@ async def analyze_message(payload: MessageInput):
             # Pass records as dictionaries with keys expected by router_llm.py
             "user_sender_history": filtered_history_df.to_dict(orient="records"),
             'user_sender_events' : filtered_events_df,
-            "evidence_formatted": ", ".join(filtered_history_df['message_text'][0:3].astype(str).tolist()) or "none",
-            "evidence_message_ids": ", ".join(filtered_history_df['message_id'][0:3].astype(str).tolist()) or "none"
+            "evidence_formatted": ", ".join(filtered_history_df['message_text'][-3:].astype(str).tolist()) or "none",
+            "evidence_message_ids": ", ".join(filtered_history_df['message_id'][-3:].astype(str).tolist()) or "none"
         }
 
         # Pass 3: Tier 2 Gemini Flash Lite Call
