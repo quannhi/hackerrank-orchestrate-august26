@@ -43,6 +43,8 @@ python code/main.py
 
 A hybrid AI message routing system that automatically filters, prioritizes, and explains incoming messages using deterministic rules, retrieval-augmented reasoning, and a Large Language Model.
 
+Branch update: Added an interactive playground that handles custom messages not in datasets based on user history and interactions. Smooth UI and a WhatsApp-inspired webpage ensures a clean look.
+
 ---
 
 ## Overview
