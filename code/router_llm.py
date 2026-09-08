@@ -5,6 +5,7 @@ from enum import Enum
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
+import pandas as pd
 
 
 class ActionEnum(str, Enum):
@@ -64,7 +65,6 @@ class AsyncLLMRouter:
         past_msgs = context.get("user_sender_history", [])
         past_events = context.get('user_sender_events', [])
         evidence_message_ids = context.get("evidence_message_ids", "none")
-        evidence_text_formatted = context.get('evidence_formatted', 'none')
 
         has_prior_user_mutes = False
         has_prior_user_reports = False
@@ -72,25 +72,41 @@ class AsyncLLMRouter:
         history_summary = []
         conv_type = []
         for pm in past_msgs:
-            if pm.get('conversation_type') not in conv_type:
-                conv_type.append(pm.get('conversation_type'))
-            relevant_row = past_events.loc[past_events['message_id'] == pm.get('message_id')].to_dict(orient = 'records')
-            message_events = relevant_row[0] # because orient records returns a list
+            c_type = pm.get('conversation_type')
+            if c_type and c_type not in conv_type:
+                conv_type.append(c_type)
+
+            # Polymorphic check: handles DataFrame (server.py), dict, or pre-merged list (main.py)
+            if isinstance(past_events, pd.DataFrame) and not past_events.empty:
+                rel = past_events[past_events['message_id']
+                                  == pm.get('message_id')]
+                message_events = rel.iloc[0].to_dict() if not rel.empty else {}
+            elif isinstance(past_events, dict):
+                message_events = past_events.get(pm.get('message_id'), {})
+            else:
+                # Fallback: ContextBuilder already merged events directly into pm
+                message_events = pm
+
             if message_events.get('muted_after_message') == 1:
                 has_prior_user_mutes = True
             if message_events.get('message_reported') == 1:
                 has_prior_user_reports = True
+
             history_summary.append(
                 f"- [Evidence ID: {pm.get('message_id')}] Text: '{pm.get('message_text')}' Type: '{pm.get('conversation_type')}' | "
-                f"Replied: {message_events.get('message_replied') == 1}, Dismissed: {message_events.get('notification_dismissed') == 1}, Reaction Time Minutes: {message_events.get('reaction_time_minutes', 'did not reply')}, Muted after receiving: {message_events.get('muted_after_message') == 1}, Reported: {message_events.get('message_reported') == 1} "
+                f"Replied: {message_events.get('message_replied') == 1}, "
+                f"Dismissed: {message_events.get('notification_dismissed') == 1}, "
+                f"Reaction Time Minutes: {message_events.get('reaction_time_minutes', 'did not reply')}, "
+                f"Muted after receiving: {message_events.get('muted_after_message') == 1}, "
+                f"Reported: {message_events.get('message_reported') == 1}"
             )
-        
+
         history_str = (
             "\n".join(history_summary)
             if history_summary
             else "No prior message history."
         )
-        print(history_str)
+
         return f"""
         You are an intelligent notification router. Analyze the incoming message and its context to determine both the routing action ("notify", "received", "mute") and the category ("personal", "business", "security", "promotional").
 
@@ -118,14 +134,14 @@ class AsyncLLMRouter:
 
         [EVIDENCE CITATION REQUIREMENT]
         Available Evidence IDs: {evidence_message_ids}
-        - If Evidence IDs are prereceived (not 'none'), your generated reason MUST explicitly reference the specific evidence ID(s) and signal (e.g., "Matched evidence ID message_0017 showing past dismissal").
+        - If Evidence IDs are present (not 'none'), your generated reason MUST explicitly reference the specific evidence ID(s) and signal (e.g., "Matched evidence ID message_0017 showing past dismissal").
 
         [INPUT CONTEXT]
         - Message ID: {context.get('message_id')}
         - Text: "{context.get('message_text', '')}"
-        - Conversation Type: {', '.join(conv_type)}
-        - Forwarded Count: {context.get('forwarded_count')}
-        - Security Flags: Domain Mismatch={flags.get('domain_mismatch')}, Verified Business={flags.get('is_business_verified')}
+        - Conversation Type: {', '.join(conv_type) if conv_type else 'direct'}
+        - Forwarded Count: {context.get('forwarded_count', 0)}
+        - Security Flags: Domain Mismatch={flags.get('domain_mismatch', False)}, Verified Business={flags.get('is_business_verified', False)}
         - Sender History Signals: Prior Reports={has_prior_user_reports}, Prior Mutes={has_prior_user_mutes}, Reply Rate={metrics.get('reply_rate', 0.0):.2f}
 
         [HISTORICAL MESSAGES]
@@ -136,7 +152,6 @@ class AsyncLLMRouter:
         evidence_str = context.get("evidence_message_ids", "none")
         media_path = context.get("media_path")
         uploaded_file = None
-        print(evidence_str)
         try:
             if media_path and os.path.exists(media_path):
                 uploaded_file = await asyncio.to_thread(
