@@ -266,6 +266,7 @@ This results in:
 │   ├── context_builder.py      # Relational joiner & metric aggregator
 │   ├── router_llm.py           # Tier 2 Gemini Flash-Lite LLM engine
 │   ├── requirements.txt        # Dependencies
+│   ├── server.py               # Context builder and runner for UI version
 │   └── main.py                 # Full batch execution pipeline
 ├── output.csv                  # Final generated submission output
 ├── .env                        # Environment variable configuration
