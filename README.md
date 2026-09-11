@@ -41,11 +41,10 @@ python code/main.py
 ```
 # Inbox Intelligence Agent
 
-A hybrid AI message routing system that automatically filters, prioritizes, and explains incoming messages using deterministic rules, retrieval-augmented reasoning, and a Large Language Model.
+A hybrid AI message routing system that automatically filters, prioritizes, and explains incoming messages using deterministic rules, retrieval-augmented reasoning, and a Large Language Model. Demonstrated with an interactive playground that handles custom messages not in datasets based on user history and interactions. Smooth UI and a WhatsApp-inspired webpage ensures a clean look. 
 
-Branch update: Added an interactive playground that handles custom messages not in datasets based on user history and interactions. Smooth UI and a WhatsApp-inspired webpage ensures a clean look.
+---<img width="1800" height="730" alt="Screenshot_410" src="https://github.com/user-attachments/assets/835813cf-3273-496e-9405-fbd5b6ee5984" />
 
----
 
 ## Overview
 
@@ -201,9 +200,8 @@ Every decision contains a natural-language explanation.
 
 Example
 
-```
-Immediate notification because the message requires user action before a deadline and similar messages historically received prompt replies.
-```
+<img width="1240" height="647" alt="Screenshot_412" src="https://github.com/user-attachments/assets/5008c875-9350-49b9-a4ea-2829c1d8f82a" />
+
 
 This allows users to understand *why* the system made a decision.
 
